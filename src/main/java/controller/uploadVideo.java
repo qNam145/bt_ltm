@@ -31,41 +31,77 @@ public class uploadVideo extends HttpServlet {
             new File(COMPRESSED_DIR).mkdir();
         }
         try {
-            // Step 1: Receive the video file
+            String username = (String) request.getSession().getAttribute("username");
             Part filePart = request.getPart("videoFile");
             String fileName = filePart.getSubmittedFileName();
 
-            // Step 2: Save uploaded video
             filePart.write( UPLOAD_DIR + fileName);
 
-            // Step 3: Handle compression logic
-            String compressedFilePath = COMPRESSED_DIR + "compressed_" + fileName;
+            String compressedFilePath = COMPRESSED_DIR + fileName;
 
-            video videoBean= videobo.compressVideo(UPLOAD_DIR,fileName,compressedFilePath);
+            video vid = new video(fileName,false,UPLOAD_DIR,"File is being processed",filePart.getSize());
+            videobo.addVideo(vid,username);
 
-            // Step 4: Respond back to the client
-            response.setContentType("text/html");
-            response.getWriter().println("<h2>Video Compression Results</h2>");
-            response.getWriter().println("<p><strong>Status:</strong> " + videoBean.getIsDone() + "</p>");
-            response.getWriter().println("<p><strong>Original File Path:</strong> " + UPLOAD_DIR + fileName + "</p>");
-            response.getWriter().println("<p><strong>Compressed File Path:</strong> " + videoBean.getFileLocation() + "</p>");
-            response.getWriter().println("<p><strong>Compressed File Size:</strong> " + videoBean.getFilesize() + " bytes</p>");
+            ProcessVideo process = new ProcessVideo(vid,compressedFilePath,username);
+            Thread thread = new Thread(process);
+            thread.start();
+
+            response.sendRedirect(request.getContextPath() + "/CompressVideo");
 
         } catch (Exception e) {
-            // Handle the exception and send an error response
             try {
                 response.setContentType("text/html");
                 response.getWriter().println("<h2>Error occurred while compressing the video</h2>");
-                response.getWriter().println("<p>Error Message: " + e.getMessage() + "</p>");
+                response.getWriter().println("<p style=\"color:red\">Error Message: " + e.getMessage() + "</p>");
             } catch (IOException ioException) {
-                ioException.printStackTrace();  // Handle any error while writing the response
+                ioException.printStackTrace();
             }
-            e.printStackTrace();  // Log the error for debugging
+            e.printStackTrace();
         }
     }
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) {
-        doPost(request,response);
+        if(request.getSession().getAttribute("username")!=null){
+            try {
+                String username = (String) request.getSession().getAttribute("username");
+                request.setAttribute("videos", videobo.getAllVideo(username));
+                request.getRequestDispatcher("index.jsp").forward(request, response);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        else {
+            try {
+                response.sendRedirect(request.getContextPath() + "/auth");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
+}
+class ProcessVideo implements Runnable{
+    private video video;
+    private String outputFilePath;
+    private String username;
+    public ProcessVideo (video vid,String outputFilePath,String username){
+        this.video=vid;
+        this.outputFilePath = outputFilePath;
+        this.username = username;
+    }
+    @Override
+    public void run() {
+        try {
+            VideoBO videobo = new VideoBO();
+            videobo.compressVideo(video.getFileLocation(),video.getName(),outputFilePath);
+            video.setFileLocation(outputFilePath);
+            video.setIsDone(true);
+            video.setDesc("File is compressed");
+            videobo.updateVideo(video,username);
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
 }

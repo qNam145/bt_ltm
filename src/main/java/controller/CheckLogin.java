@@ -41,7 +41,7 @@ public class CheckLogin extends HttpServlet {
                     boolean isValid = bo.isValidUser(username, password);
                     if (isValid) {
                         req.getSession().setAttribute("username", username);
-                        resp.sendRedirect(req.getContextPath() + "/");
+                        resp.sendRedirect(req.getContextPath() + "/CompressVideo");
                     } else {
                         resp.sendRedirect(req.getContextPath() + "/auth?error");
                     }
