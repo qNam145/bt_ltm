@@ -1,71 +1,46 @@
 package model.bo;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
 
-import org.bytedeco.javacv.FFmpegFrameGrabber;
-import org.bytedeco.javacv.FFmpegFrameRecorder;
-import org.bytedeco.ffmpeg.global.avcodec;
-import org.bytedeco.javacv.Frame;
 
 import model.bean.video;
 
 public class VideoBO {
-    public static video compressVideo(String inputFilePath, String outputFilePath) {
-        FFmpegFrameGrabber frameGrabber = null;
-        FFmpegFrameRecorder frameRecorder = null;
-        video videoBean = new video();  // Create a video bean to return
+    public  video compressVideo(String inputFilePath,String name, String outputFilePath) throws IOException, InterruptedException, IOException {
+        video videoBean = new video(name,false,inputFilePath,"",0);
+        // FFmpeg command to compress the video
+        String[] command = {
+                "ffmpeg",
+                "-i", inputFilePath+name,     // Input file
+                "-vcodec", "libx265",    // Video codec
+                "-crf", "28",            // Constant Rate Factor (adjust the value as needed)
+                outputFilePath           // Output file
+        };
 
-        try {
-            // Start the frame grabber to read the video
-            frameGrabber = new FFmpegFrameGrabber(inputFilePath);
-            frameGrabber.start();
+        // Use ProcessBuilder to run the FFmpeg command
+        ProcessBuilder processBuilder = new ProcessBuilder(command);
+        processBuilder.redirectErrorStream(true);
+        Process process = processBuilder.start();
 
-            // Setup the frame recorder to compress the video
-            frameRecorder = new FFmpegFrameRecorder(outputFilePath, frameGrabber.getImageWidth(), frameGrabber.getImageHeight());
-            frameRecorder.setVideoCodec(avcodec.AV_CODEC_ID_H264); // Use H.264 codec for compression
-            frameRecorder.setFormat("mp4"); // Output format to MP4
-            frameRecorder.setFrameRate(frameGrabber.getFrameRate()); // Set the same frame rate as the input video
-            frameRecorder.setVideoBitrate(2000000); // Adjust bitrate for compression
 
-            // Start recording the video with compression
-            frameRecorder.start();
-
-            // Process each frame and record it
-            Frame frame;
-            while ((frame = frameGrabber.grabFrame()) != null) {
-                frameRecorder.record(frame);
-            }
-
-            // Stop the recorder and grabber after processing
-            frameRecorder.stop();
-            frameGrabber.stop();
-
-            // Set the properties for the video object
-            File inputFile = new File(inputFilePath);
-            File outputFile = new File(outputFilePath);
-            
-            videoBean.setName(inputFile.getName()); // Set video name (input file name)
-            videoBean.setFileLocation(outputFilePath); // Set the location of the compressed file
-            videoBean.setFilesize(outputFile.length()); // Set the size of the compressed video file
-            videoBean.setIsDone(true); // Mark the compression as done
-            videoBean.setDesc("Compression successful");
-
-            System.out.println("Video compression completed successfully!");
-
-        } catch (Exception e) {
-            // Set failure status on error
-            videoBean.setIsDone(false);
-            videoBean.setDesc("Error during video compression: " + e.getMessage());
-            e.printStackTrace();
-        } finally {
-            try {
-                if (frameRecorder != null) frameRecorder.close();
-                if (frameGrabber != null) frameGrabber.close();
-            } catch (Exception e) {
-                e.printStackTrace();
+        // Read and print the output of the FFmpeg process
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                System.out.println(line);
             }
         }
-
-        return videoBean;  // Return the video object with its properties
+        // Wait for the process to complete
+        int exitCode = process.waitFor();
+        if (exitCode != 0) {
+            throw new IOException("FFmpeg process failed with exit code " + exitCode);
+        }
+        videoBean.setIsDone(true);
+        videoBean.setFileLocation(outputFilePath);
+        videoBean.setFilesize(new File(outputFilePath).length());
+        return videoBean;
     }
 }

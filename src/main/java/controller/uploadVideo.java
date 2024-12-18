@@ -27,21 +27,20 @@ public class uploadVideo extends HttpServlet {
             // Step 1: Receive the video file
             Part filePart = request.getPart("videoFile");
             String fileName = filePart.getSubmittedFileName();
-            String uploadPath = UPLOAD_DIR + fileName;
 
             // Step 2: Save uploaded video
-            filePart.write(uploadPath);
+            filePart.write( UPLOAD_DIR + fileName);
 
             // Step 3: Handle compression logic
             String compressedFilePath = COMPRESSED_DIR + "compressed_" + fileName;
 
-            video videoBean= videobo.compressVideo(uploadPath, compressedFilePath);
+            video videoBean= videobo.compressVideo(UPLOAD_DIR,fileName,compressedFilePath);
 
             // Step 4: Respond back to the client
             response.setContentType("text/html");
             response.getWriter().println("<h2>Video Compression Results</h2>");
             response.getWriter().println("<p><strong>Status:</strong> " + videoBean.getIsDone() + "</p>");
-            response.getWriter().println("<p><strong>Original File Path:</strong> " + uploadPath + "</p>");
+            response.getWriter().println("<p><strong>Original File Path:</strong> " + UPLOAD_DIR + fileName + "</p>");
             response.getWriter().println("<p><strong>Compressed File Path:</strong> " + videoBean.getFileLocation() + "</p>");
             response.getWriter().println("<p><strong>Compressed File Size:</strong> " + videoBean.getFilesize() + " bytes</p>");
 
