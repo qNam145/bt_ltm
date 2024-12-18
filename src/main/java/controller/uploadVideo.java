@@ -15,14 +15,14 @@ import model.bo.VideoBO;
 @WebServlet("/CompressVideo")
 @MultipartConfig
 public class uploadVideo extends HttpServlet {
-	private static final long serialVersionUID = 1L;
-	private static VideoBO videobo = new VideoBO();
+    private static final long serialVersionUID = 1L;
+    private static VideoBO videobo = new VideoBO();
 
-    
+
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) {
-    	String UPLOAD_DIR = getServletContext().getRealPath("/compressed");
-    	String COMPRESSED_DIR = getServletContext().getRealPath("/uploads");
+        String UPLOAD_DIR = getServletContext().getRealPath("/compressed");
+        String COMPRESSED_DIR = getServletContext().getRealPath("/uploads");
         try {
             // Step 1: Receive the video file
             Part filePart = request.getPart("videoFile");
@@ -35,7 +35,7 @@ public class uploadVideo extends HttpServlet {
             // Step 3: Handle compression logic
             String compressedFilePath = COMPRESSED_DIR + "compressed_" + fileName;
 
-            video videoBean= videobo.compressVideo(uploadPath, compressedFilePath);
+            video videoBean = videobo.compressVideo(uploadPath, compressedFilePath);
 
             // Step 4: Respond back to the client
             response.setContentType("text/html");
@@ -57,9 +57,9 @@ public class uploadVideo extends HttpServlet {
             e.printStackTrace();  // Log the error for debugging
         }
     }
+
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) {
-    	doPost(request,response);
+        doPost(request, response);
     }
-
 }
