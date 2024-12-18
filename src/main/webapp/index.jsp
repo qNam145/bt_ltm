@@ -135,9 +135,9 @@
 		<thead>
 		<tr>
 			<th>Name</th>
-			<th>Is Done</th>
+			<th>Complete</th>
 			<th>Download</th>
-			<th>Status</th>
+			<th>File Size(KB)</th>
 			<th>Description</th>
 		</tr>
 		</thead>
@@ -145,11 +145,11 @@
 		<% for (video v : list) { %>
 		<tr>
 			<td><%= v.getName() %></td>
-			<td><%= v.getIsDone() %></td>
+			<td><%= v.getIsDone() ? "Yes" : "No" %></td>
 			<td>
 				<a href="<%= v.getFileLocation() %>" <%= v.getIsDone() ? "" : "disabled" %>>Download</a>
 			</td>
-			<td><%= v.getIsDone() ? "Yes" : "No" %></td>
+			<td><%= v.getFilesize()/1024 %></td>
 			<td><%= v.getDesc() %></td>
 		</tr>
 		<% } %>
