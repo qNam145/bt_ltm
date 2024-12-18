@@ -18,4 +18,8 @@ public class UserBO {
 		}
 		return false;
 	}
+
+	public void addUser(String username, String password) throws ClassNotFoundException, SQLException {
+		dao.addUser(username, password);
+	}
 }

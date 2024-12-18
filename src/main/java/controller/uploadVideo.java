@@ -1,5 +1,6 @@
 package controller;
 
+import java.io.File;
 import java.io.IOException;
 
 import javax.servlet.annotation.MultipartConfig;
@@ -21,27 +22,32 @@ public class uploadVideo extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) {
-        String UPLOAD_DIR = getServletContext().getRealPath("/compressed");
-        String COMPRESSED_DIR = getServletContext().getRealPath("/uploads");
+        String UPLOAD_DIR = getServletContext().getRealPath("/uploads/");
+        String COMPRESSED_DIR = getServletContext().getRealPath("/compressed/");
+        if (!new File(UPLOAD_DIR).exists()) {
+            new File(UPLOAD_DIR).mkdir();
+        }
+        if (!new File(COMPRESSED_DIR).exists()) {
+            new File(COMPRESSED_DIR).mkdir();
+        }
         try {
             // Step 1: Receive the video file
             Part filePart = request.getPart("videoFile");
             String fileName = filePart.getSubmittedFileName();
-            String uploadPath = UPLOAD_DIR + fileName;
 
             // Step 2: Save uploaded video
-            filePart.write(uploadPath);
+            filePart.write( UPLOAD_DIR + fileName);
 
             // Step 3: Handle compression logic
             String compressedFilePath = COMPRESSED_DIR + "compressed_" + fileName;
 
-            video videoBean = videobo.compressVideo(uploadPath, compressedFilePath);
+            video videoBean= videobo.compressVideo(UPLOAD_DIR,fileName,compressedFilePath);
 
             // Step 4: Respond back to the client
             response.setContentType("text/html");
             response.getWriter().println("<h2>Video Compression Results</h2>");
             response.getWriter().println("<p><strong>Status:</strong> " + videoBean.getIsDone() + "</p>");
-            response.getWriter().println("<p><strong>Original File Path:</strong> " + uploadPath + "</p>");
+            response.getWriter().println("<p><strong>Original File Path:</strong> " + UPLOAD_DIR + fileName + "</p>");
             response.getWriter().println("<p><strong>Compressed File Path:</strong> " + videoBean.getFileLocation() + "</p>");
             response.getWriter().println("<p><strong>Compressed File Size:</strong> " + videoBean.getFilesize() + " bytes</p>");
 
@@ -57,9 +63,9 @@ public class uploadVideo extends HttpServlet {
             e.printStackTrace();  // Log the error for debugging
         }
     }
-
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) {
-        doPost(request, response);
+        doPost(request,response);
     }
+
 }

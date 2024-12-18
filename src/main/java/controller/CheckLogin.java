@@ -11,43 +11,58 @@ import javax.servlet.http.HttpServletResponse;
 
 import model.bo.UserBO;
 
-@WebServlet("/CheckLogin")
+@WebServlet(urlPatterns = {"/auth", "/login", "/register"})
 public class CheckLogin extends HttpServlet {
-	private static final long serialVersionUID = 1L;
-	private static UserBO bo=new UserBO();
-	@Override
-	protected void doGet(HttpServletRequest request, HttpServletResponse response) {
-		try {
-			request.getRequestDispatcher("login.jsp").forward(request, response);
-		} catch (ServletException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
-	@Override
-	protected void doPost(HttpServletRequest request, HttpServletResponse response) {
-		String username = request.getParameter("username");
-		String password = request.getParameter("password");
-		try {
-			if(bo.isValidUser(username, password)) {
-				request.getSession().setAttribute("username",username);
-				response.sendRedirect("index.jsp");
-			}
-			else {
-				request.setAttribute("isfail", true);
-				try {
-					request.getRequestDispatcher("login.jsp").forward(request, response);
-				} catch (ServletException e) {
-					e.printStackTrace();
-				}
-			}
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-		} catch (SQLException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
+    private static final UserBO bo = new UserBO();
+
+    @Override
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        if (req.getRequestURI().equals(req.getContextPath() + "/auth")) {
+            System.out.println(req.getParameter("error"));
+            if (req.getParameter("error") != null) {
+                req.setAttribute("error", "Invalid username or password");
+            }
+            else {
+                req.setAttribute("error", "");
+            }
+            req.getRequestDispatcher("login.jsp").forward(req, resp);
+            return;
+        }
+    }
+
+    @Override
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        String username = req.getParameter("username");
+        String password = req.getParameter("password");
+        String URL = req.getRequestURI().replace(req.getContextPath(), "");
+        switch (URL) {
+            case "/login":
+                try {
+                    boolean isValid = bo.isValidUser(username, password);
+                    if (isValid) {
+                        req.getSession().setAttribute("username", username);
+                        resp.sendRedirect(req.getContextPath() + "/");
+                    } else {
+                        resp.sendRedirect(req.getContextPath() + "/auth?error");
+                    }
+                } catch (ClassNotFoundException e) {
+                    e.printStackTrace();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+                break;
+            case "/register":
+                try {
+                    String regPassword = req.getParameter("reg-password");
+                    bo.addUser(username, regPassword);
+                    resp.sendRedirect(req.getContextPath() + "/auth");
+                } catch (ClassNotFoundException e) {
+                    throw new RuntimeException(e);
+                } catch (SQLException e) {
+                    throw new RuntimeException(e);
+                }
+                break;
+        }
+    }
+    
 }

@@ -35,4 +35,11 @@ public class UserDAO {
 		}
 		return null;
 	}
+
+	public void addUser(String username, String password) throws ClassNotFoundException, SQLException {
+		Connection con = connectdb.getConnection();
+		Statement stm =con.createStatement();
+		String Query="Insert into user values('"+username+"','"+password+"')";
+		stm.executeUpdate(Query);
+	}
 }
